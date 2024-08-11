@@ -15,7 +15,20 @@ def get_all_uploaded_files(db : Database = Depends(get_db),table_manager_obj: Ta
     return {"data" : response}
 
 
-@file_router.get("/file-data/{table_name}")
+@file_router.get("/file-data/{table_name}",   summary="Fetch Data from a Specified Table",
+    description="""
+    This API endpoint retrieves data from a specified table in the database.
+    It takes the table name as a path parameter and returns the data stored in that table.
+    
+    **Path Parameter:**
+    - `table_name` (str): The name of the table from which to fetch the data.
+    
+    **Response:**
+    - JSON object containing the data from the specified table.
+    
+    Example:
+    If the table name is `users`, the API will return the data stored in the `users` table.
+    """)
 async def get_file_data(table_name : str,db : Database = Depends(get_db),cmp_obj : Comparision = Depends(Comparision)) :
     table_data  = cmp_obj.get_table_data(table_name,db)
     return {"data" : table_data}
