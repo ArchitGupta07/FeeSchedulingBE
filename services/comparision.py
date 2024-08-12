@@ -6,19 +6,6 @@ from db import Database
 from enums import Axis, Operations
 from utils.helper import add_hash_col, convert_to_python_type, dtype_to_postgres
 class Comparision : 
-    def fetch_table_from_db(self,table_name : str,db :Database) :
-        query = text(f"SELECT * FROM {table_name}")
-        try :
-            result = db.execute(query)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-        rows = result.fetchall()
-
-        columns = result.keys()  # Retrieve column names from the result
-
-        df = pd.DataFrame(rows, columns=columns)
-        print(df)
-        return df
     
     async def create_df_from_excel(self,table_name : str,cmp_file : UploadFile,db : Database) :
         content = await cmp_file.read()

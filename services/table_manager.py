@@ -5,10 +5,25 @@ import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
 from db import Database, get_db, engine
 from sqlalchemy.sql import text
+from services.comparision import Comparision
 from utils.helper import add_hash_col, remove_null_values
 import datetime
 
 class TableManager:
+    def fetch_table_from_db(self,table_name : str,db :Database) :
+        query = text(f"SELECT * FROM {table_name}")
+        try :
+            result = db.execute(query)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        rows = result.fetchall()
+
+        columns = result.keys()  # Retrieve column names from the result
+
+        df = pd.DataFrame(rows, columns=columns)
+        print(df)
+        return df
+    
     def extract_code_colname(self, excel_table):
         hashable_col = None
         for col in excel_table.columns:
@@ -108,4 +123,11 @@ class TableManager:
         files = [{"table_name": row.table_name, "file_name": row.file_name} for row in rows]
 
         return files
+    
+    def download_xls(self,db: Database,table_name : str) :
+        df = self.fetch_table_from_db(table_name,db)
+        file = df.to_excel(table_name)
+        return file
 
+        
+        

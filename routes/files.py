@@ -14,6 +14,9 @@ def get_all_uploaded_files(db : Database = Depends(get_db),table_manager_obj: Ta
     response = table_manager_obj.get_all_files(db)
     return {"data" : response}
 
+@file_router.get('/download/{table_name}')
+    
+
 
 @file_router.get("/file-data/{table_name}",   summary="Fetch Data from a Specified Table",
     description="""
