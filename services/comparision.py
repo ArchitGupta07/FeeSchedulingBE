@@ -39,7 +39,7 @@ class Comparision :
 
         # Set the unique code column as the index for comparison
         new_df.set_index("hash", inplace=True)
-
+        new_df.columns = [col.lower() for col in new_df.columns]
         old_df.set_index("hash", inplace=True)
         # Extract unique codes
         old_codes = old_df.index
