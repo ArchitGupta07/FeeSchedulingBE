@@ -145,6 +145,7 @@ class Comparision :
  
 
     def get_table_data(self,table_name,db : Database) : 
-        df = self.fetch_table_from_db(table_name,db)
+        table_manager_obj = TableManager()
+        df = table_manager_obj.fetch_table_from_db(table_name,db)
         json_data=df.to_dict(orient='records')
         return json_data
