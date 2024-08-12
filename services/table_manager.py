@@ -9,6 +9,10 @@ from utils.helper import add_hash_col, remove_null_values
 import datetime
 
 class TableManager:
+
+    # def __init__(self, db: Database):
+    #     self.db = db
+        
     def fetch_table_from_db(self,table_name : str,db :Database) :
         query = text(f"SELECT * FROM {table_name}")
         try :
