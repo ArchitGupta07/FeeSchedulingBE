@@ -5,7 +5,7 @@ from sqlalchemy import text
 from db import Database
 from enums import Axis, Operations
 from services.table_manager import TableManager
-from utils.helper import add_hash_col, convert_to_python_type, dtype_to_postgres, remove_null_values
+from utils.helper import add_hash_col, convert_to_python_type, dtype_to_postgres, infer_type, remove_null_values
 class Comparision : 
     
     async def create_df_from_excel(self,table_name : str,cmp_file : UploadFile,db : Database) :
@@ -40,6 +40,9 @@ class Comparision :
         # Set the unique code column as the index for comparison
         new_df.set_index("hash", inplace=True)
         new_df.columns = [col.lower() for col in new_df.columns]
+        print("--------------------------------------------------------------------------------------------------------")
+        for col in new_df.columns:
+            print(f"Column: {col}, Data type: {new_df[col].dtype}")
         old_df.set_index("hash", inplace=True)
         # Extract unique codes
         old_codes = old_df.index
@@ -76,22 +79,16 @@ class Comparision :
                 
                 # before comparing make a check on the new_df ,if the col is present in  new_df, if not(col is deleted) new_val would be None
                 for col in old_row.index:
-
-                    old_value = convert_to_python_type(old_row[col])
+                    
+                    old_value = old_row[col]
                     if col not in new_row.index:
                         #this means col is deleted, 
                         continue 
-                        # new_value = None
-                        # changes.append({
-                        #     "type": Operations.DELETE.name,
-                        #     "code": code,
-                        #     "column_name": col,
-                        #     "old_value": old_value,
-                        #     "new_value": new_value
-                        # })
                     else : 
-                        new_value = convert_to_python_type(new_row[col])
-                        if old_value != new_value:
+                        new_value = new_row[col]
+                        if str(old_value) != str(new_value):
+                            old_value = convert_to_python_type(old_row[col])
+                            new_value = convert_to_python_type(new_row[col])
                             changes.append({
                                 "type": Operations.UPDATE.name,
                                 "row_name": code,
@@ -132,7 +129,7 @@ class Comparision :
             if code not in new_codes:
                 #add all the hashes with type as empty and then store in table_changes
                 deleted_rows[code] = ""
-        table_changes.append({
+                table_changes.append({
                 "type" : Axis.ROW.name,
                 "operation": Operations.DELETE.name,
                 "values": json.dumps(deleted_rows)

@@ -5,7 +5,7 @@ import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
 from db import Database, get_db, engine
 from sqlalchemy.sql import text
-from utils.helper import add_hash_col, remove_null_values
+from utils.helper import add_hash_col, infer_type, remove_null_values
 import datetime
 
 class TableManager:
@@ -68,18 +68,6 @@ class TableManager:
         df = remove_null_values(df)
 
 
-        # for column in df.columns:
-        #     if pd.api.types.is_numeric_dtype(df[column]):
-        #         df[column].fillna(0, inplace=True)  # Fill numeric columns with 0
-        #     elif pd.api.types.is_string_dtype(df[column]):
-        #         df[column].fillna('', inplace=True)  # Fill string columns with empty string
-        #     elif pd.api.types.is_datetime64_any_dtype(df[column]):
-        #         df[column].fillna(pd.Timestamp('2001-01-01'), inplace=True)  # Fill datetime columns with a default date
-        #     else:
-        #         # df[column].fillna('unknown', inplace=True)
-        #         df[column].fillna('', inplace=True)
-
-                
         hashable_cols = []
 
         col1 = self.extract_code_colname(df)
@@ -89,12 +77,18 @@ class TableManager:
         hashable_cols.append(self.calculate_hashable_col(df, col1))
 
         df = add_hash_col(df, hashable_cols)
-        df.columns = [col.lower() for col in df.columns]
+        df.columns = [col.lower() for col in df.columns] 
+        #check the data type of all the columns by iterating over every value and insert the table with correct data types 
+        print("--------------------------------------------------------------------------------------------------------")
+        for col in df.columns:
+            print(f"Column: {col}, Data type: {df[col].dtype}")
+
         send_df = df
         try:
             # with db.begin() as transaction:
                 # Create the table
                 df.to_sql(table_name, engine, index=False, if_exists='replace')
+
                 print(df)
 
                 # Insert the metadata

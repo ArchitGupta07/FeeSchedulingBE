@@ -2,6 +2,15 @@ import hashlib
 import pandas as pd
 import numpy as np
 
+def infer_type(value):
+    try:
+        return int(value)
+    except ValueError:
+        try:
+            return float(value)
+        except ValueError:
+            return value
+
 def dtype_to_postgres(dtype):
         if pd.api.types.is_string_dtype(dtype) or dtype == 'object':
             return 'text'
