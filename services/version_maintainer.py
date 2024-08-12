@@ -6,7 +6,7 @@ class VersionManager(TableManager):
 
     def __init__(self, table_name) -> None:
         self.table_name = table_name
-        self.df = super().fetch_table_from_db(table_name, db:Database)
+        # self.df = super().fetch_table_from_db(table_name, db:Database)
         
 
     def apply_row_changes(self):
