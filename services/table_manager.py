@@ -53,7 +53,8 @@ class TableManager:
             elif pd.api.types.is_datetime64_any_dtype(df[column]):
                 df[column].fillna(pd.Timestamp('1970-01-01'), inplace=True)  # Fill datetime columns with a default date
             else:
-                df[column].fillna('unknown', inplace=True)
+                # df[column].fillna('unknown', inplace=True)
+                df[column].fillna('', inplace=True)
 
                 
         hashable_cols = []
