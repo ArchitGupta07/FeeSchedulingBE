@@ -5,7 +5,6 @@ import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
 from db import Database, get_db, engine
 from sqlalchemy.sql import text
-from services.comparision import Comparision
 from utils.helper import add_hash_col, remove_null_values
 import datetime
 

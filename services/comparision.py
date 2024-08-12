@@ -4,7 +4,8 @@ import pandas as pd
 from sqlalchemy import text
 from db import Database
 from enums import Axis, Operations
-from utils.helper import add_hash_col, convert_to_python_type, dtype_to_postgres
+from services.table_manager import TableManager
+from utils.helper import add_hash_col, convert_to_python_type, dtype_to_postgres, remove_null_values
 class Comparision : 
     
     async def create_df_from_excel(self,table_name : str,cmp_file : UploadFile,db : Database) :
@@ -25,11 +26,13 @@ class Comparision :
     
 
     async def compare(self,db: Database,table_name: str , cmp_file : UploadFile) :
-        old_df = self.fetch_table_from_db(table_name ,db)
+        table_manager_obj = TableManager()
+        old_df = table_manager_obj.fetch_table_from_db(table_name ,db)
         print(old_df)
 
         new_df =await self.create_df_from_excel(table_name,cmp_file,db)
         print(new_df)
+        new_df = remove_null_values(new_df)
 
         changes = []
         table_changes = []
