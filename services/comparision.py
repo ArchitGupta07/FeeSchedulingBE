@@ -11,6 +11,11 @@ class Comparision :
     async def create_df_from_excel(self,table_name : str,cmp_file : UploadFile,db : Database) :
         content = await cmp_file.read()
         df = pd.read_excel(content)
+
+        tbl_obj = TableManager()
+
+        df = tbl_obj.find_table_headers(df)
+        df.columns = [col.lower() for col in df.columns]
         #new df doesnt have hash column we have to retrieve the hash col from the table meta data add apply hash col
         hashable_cols = []
         query = text("SELECT hashable_cols FROM table_details WHERE table_name = :table_name")
@@ -19,8 +24,8 @@ class Comparision :
         query_data = result.fetchone()
 
         hashable_cols = query_data[0].split(",")
-        print(hashable_cols)
- 
+        print("cols...........................",hashable_cols)
+        print("cols......................",df.columns)
         df = add_hash_col(df,hashable_cols)
         return df
     
@@ -38,15 +43,18 @@ class Comparision :
         table_changes = []
 
         # Set the unique code column as the index for comparison
-        new_df.set_index("hash", inplace=True)
         new_df.columns = [col.lower() for col in new_df.columns]
-        print("--------------------------------------------------------------------------------------------------------")
-        for col in new_df.columns:
-            print(f"Column: {col}, Data type: {new_df[col].dtype}")
+        new_df.set_index("hash", inplace=True)
         old_df.set_index("hash", inplace=True)
         # Extract unique codes
         old_codes = old_df.index
         new_codes = new_df.index
+        print("archit")
+        for col in new_df.columns:
+            print(f"Column: {col}, Data type: {new_df[col].dtype}")
+
+        for col in old_df.columns:
+            print(f"Column: {col}, Data type: {old_df[col].dtype}")
 
         # Detect added columns
         added_columns = {

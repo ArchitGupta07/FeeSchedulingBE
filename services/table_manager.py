@@ -53,6 +53,82 @@ class TableManager:
             return f"{base_name}_{timestamp}"
     
 
+
+
+    def find_table_headers(self, df_temp):       
+        print("Original DataFrame:")
+        print(df_temp)
+
+      
+        max_non_null_count = 0
+        longest_row_index = None
+
+        for i, row in df_temp.iterrows():
+            # Count non-null values
+            non_null_count = row.count() - row.isnull().sum()  # Count of non-null values
+            total_valid_count = non_null_count  # Only count non-null values
+
+            if total_valid_count > max_non_null_count:
+                max_non_null_count = total_valid_count
+                longest_row_index = i
+
+        if longest_row_index is not None:
+            print(f"The longest row with non-null values is at index {longest_row_index} with {max_non_null_count} valid entries:")
+            print(df_temp.iloc[longest_row_index])
+
+            # Step 3: Set the header to the identified row and create a new DataFrame
+            df_with_header = df_temp.iloc[longest_row_index:]  # Get the DataFrame starting from the header row
+            df_with_header.columns = df_with_header.iloc[0]  # Set the header
+            df_with_header = df_with_header[1:]  # Remove the header row from the DataFrame
+            df_with_header.reset_index(drop=True, inplace=True)  # Reset index
+
+            print("Full table with the header set:")
+            print(df_with_header)
+            
+            return df_with_header
+        else:
+            print("No valid rows found.")
+            return None
+
+
+
+
+    def find_table_headers(self, df_temp):       
+        print("Original DataFrame:")
+        print(df_temp)
+
+      
+        max_non_null_count = 0
+        longest_row_index = None
+
+        for i, row in df_temp.iterrows():
+            # Count non-null values
+            non_null_count = row.count() - row.isnull().sum()  # Count of non-null values
+            total_valid_count = non_null_count  # Only count non-null values
+
+            if total_valid_count > max_non_null_count:
+                max_non_null_count = total_valid_count
+                longest_row_index = i
+
+        if longest_row_index is not None:
+            print(f"The longest row with non-null values is at index {longest_row_index} with {max_non_null_count} valid entries:")
+            print(df_temp.iloc[longest_row_index])
+
+            # Step 3: Set the header to the identified row and create a new DataFrame
+            df_with_header = df_temp.iloc[longest_row_index:]  # Get the DataFrame starting from the header row
+            df_with_header.columns = df_with_header.iloc[0]  # Set the header
+            df_with_header = df_with_header[1:]  # Remove the header row from the DataFrame
+            df_with_header.reset_index(drop=True, inplace=True)  # Reset index
+
+            print("Full table with the header set:")
+            print(df_with_header)
+            
+            return df_with_header
+        else:
+            print("No valid rows found.")
+            return None
+
+
  
     
     async def insert_table(self,db : Database, file: UploadFile = File(...)) :
@@ -64,25 +140,21 @@ class TableManager:
         table_name = self.generate_table_name(table_prefix)
         
         df = pd.read_excel(content)
+        df = self.find_table_headers(df)
 
         df = remove_null_values(df)
 
 
         hashable_cols = []
-
+        df.columns = [col.lower() for col in df.columns]
         col1 = self.extract_code_colname(df)
         if not col1:
             col1 = self.calculate_hashable_col(df)
         hashable_cols.append(col1)
         hashable_cols.append(self.calculate_hashable_col(df, col1))
-
+        # print("cols.................................",df.columns )
+        # print("cols.................................",hashable_cols )
         df = add_hash_col(df, hashable_cols)
-        df.columns = [col.lower() for col in df.columns] 
-        #check the data type of all the columns by iterating over every value and insert the table with correct data types 
-        print("--------------------------------------------------------------------------------------------------------")
-        for col in df.columns:
-            print(f"Column: {col}, Data type: {df[col].dtype}")
-
         send_df = df
         try:
             # with db.begin() as transaction:

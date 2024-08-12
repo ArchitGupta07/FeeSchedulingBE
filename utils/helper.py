@@ -24,7 +24,8 @@ def dtype_to_postgres(dtype):
 
 
 def hash_row(row, columns):
-    row_str = ''.join([str(row[col]) for col in columns])
+    print(columns)
+    row_str = ''.join([str(row[col]) for col in columns])  
     hash_result = hashlib.md5(row_str.encode()).hexdigest()
     return hash_result[:10]
 
