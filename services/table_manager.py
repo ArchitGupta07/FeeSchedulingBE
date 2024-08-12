@@ -5,7 +5,7 @@ import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
 from db import Database, get_db, engine
 from sqlalchemy.sql import text
-from utils.helper import add_hash_col
+from utils.helper import add_hash_col, remove_null_values
 import datetime
 
 class TableManager:
@@ -35,18 +35,7 @@ class TableManager:
             return f"{base_name}_{timestamp}"
     
 
-    def remove_null_values(df):
-        for column in df.columns:
-            if pd.api.types.is_numeric_dtype(df[column]):
-                df[column].fillna(0, inplace=True)  # Fill numeric columns with 0
-            elif pd.api.types.is_string_dtype(df[column]):
-                df[column].fillna('', inplace=True)  # Fill string columns with empty string
-            elif pd.api.types.is_datetime64_any_dtype(df[column]):
-                df[column].fillna(pd.Timestamp('2001-01-01'), inplace=True)  # Fill datetime columns with a default date
-            else:
-                # df[column].fillna('unknown', inplace=True)
-                df[column].fillna('', inplace=True)
-        return df
+ 
     
     async def insert_table(self,db : Database, file: UploadFile = File(...)) :
         content = await file.read()
@@ -58,7 +47,7 @@ class TableManager:
         
         df = pd.read_excel(content)
 
-        df = self.remove_null_values(df)
+        df = remove_null_values(df)
 
 
         # for column in df.columns:

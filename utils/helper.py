@@ -34,3 +34,17 @@ def convert_to_python_type(value):
     elif isinstance(value, (np.bool_, np.object_)):
         return value.item()  # Convert numpy objects to Python native types
     return value
+
+
+def remove_null_values(df):
+    for column in df.columns:
+        if pd.api.types.is_numeric_dtype(df[column]):
+            df[column].fillna(0, inplace=True)  # Fill numeric columns with 0
+        elif pd.api.types.is_string_dtype(df[column]):
+            df[column].fillna('', inplace=True)  # Fill string columns with empty string
+        elif pd.api.types.is_datetime64_any_dtype(df[column]):
+            df[column].fillna(pd.Timestamp('2001-01-01'), inplace=True)  # Fill datetime columns with a default date
+        else:
+            # df[column].fillna('unknown', inplace=True)
+            df[column].fillna('', inplace=True)
+    return df
