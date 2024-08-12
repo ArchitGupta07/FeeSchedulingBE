@@ -34,6 +34,20 @@ class TableManager:
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             return f"{base_name}_{timestamp}"
     
+
+    def remove_null_values(df):
+        for column in df.columns:
+            if pd.api.types.is_numeric_dtype(df[column]):
+                df[column].fillna(0, inplace=True)  # Fill numeric columns with 0
+            elif pd.api.types.is_string_dtype(df[column]):
+                df[column].fillna('', inplace=True)  # Fill string columns with empty string
+            elif pd.api.types.is_datetime64_any_dtype(df[column]):
+                df[column].fillna(pd.Timestamp('2001-01-01'), inplace=True)  # Fill datetime columns with a default date
+            else:
+                # df[column].fillna('unknown', inplace=True)
+                df[column].fillna('', inplace=True)
+        return df
+    
     async def insert_table(self,db : Database, file: UploadFile = File(...)) :
         content = await file.read()
 
@@ -44,17 +58,19 @@ class TableManager:
         
         df = pd.read_excel(content)
 
+        df = self.remove_null_values(df)
 
-        for column in df.columns:
-            if pd.api.types.is_numeric_dtype(df[column]):
-                df[column].fillna(0, inplace=True)  # Fill numeric columns with 0
-            elif pd.api.types.is_string_dtype(df[column]):
-                df[column].fillna('', inplace=True)  # Fill string columns with empty string
-            elif pd.api.types.is_datetime64_any_dtype(df[column]):
-                df[column].fillna(pd.Timestamp('1970-01-01'), inplace=True)  # Fill datetime columns with a default date
-            else:
-                # df[column].fillna('unknown', inplace=True)
-                df[column].fillna('', inplace=True)
+
+        # for column in df.columns:
+        #     if pd.api.types.is_numeric_dtype(df[column]):
+        #         df[column].fillna(0, inplace=True)  # Fill numeric columns with 0
+        #     elif pd.api.types.is_string_dtype(df[column]):
+        #         df[column].fillna('', inplace=True)  # Fill string columns with empty string
+        #     elif pd.api.types.is_datetime64_any_dtype(df[column]):
+        #         df[column].fillna(pd.Timestamp('2001-01-01'), inplace=True)  # Fill datetime columns with a default date
+        #     else:
+        #         # df[column].fillna('unknown', inplace=True)
+        #         df[column].fillna('', inplace=True)
 
                 
         hashable_cols = []
