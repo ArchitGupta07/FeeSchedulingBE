@@ -11,10 +11,11 @@ class Comparision :
     async def create_df_from_excel(self,table_name : str,cmp_file : UploadFile,db : Database) :
         content = await cmp_file.read()
         df = pd.read_excel(content)
-
+        df = tbl_obj.find_table_headers(df)
+        df = remove_null_values(df)
+        df = convert_column_to_numeric(df)
         tbl_obj = TableManager()
 
-        df = tbl_obj.find_table_headers(df)
         #print("cols......................",df.columns)
 
         df.columns = [col.lower() for col in df.columns]
@@ -39,14 +40,13 @@ class Comparision :
 
         new_df =await self.create_df_from_excel(table_name,cmp_file,db)
         #print(new_df)
-        new_df = convert_column_to_numeric(new_df)
-        new_df = remove_null_values(new_df)
+        
 
         changes = []
         table_changes = []
 
         # Set the unique code column as the index for comparison
-        new_df.columns = [col.lower() for col in new_df.columns]
+        # new_df.columns = [col.lower() for col in new_df.columns]
         new_df.set_index("hash", inplace=True)
         old_df.set_index("hash", inplace=True)
         # Extract unique codes
@@ -145,11 +145,21 @@ class Comparision :
                 "operation": Operations.DELETE.name,
                 "values": json.dumps(deleted_rows)
                 })    
-
-
+        print("table changes-----------------------------------")
+        print(table_changes)
+        print("chink changes-----------------------------------")
+        print(changes)
 
         #print(table_changes)
-        return {"cell_changes": changes, "table_changes": table_changes}
+        data = {"cell_changes": changes, "table_changes": table_changes}
+        # n = 5
+
+        # # Select the first `n` key-value pairs
+        # small_chunk = {k: data[k] for k in list(data.keys())[:n]}
+
+        # # Print the smaller chunk
+        # print(small_chunk)
+        return data
  
 
     def get_table_data(self,table_name,db : Database) : 

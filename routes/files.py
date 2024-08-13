@@ -63,6 +63,6 @@ async def upload_file(file: UploadFile = File(...), table_manager_obj: TableMana
 async def calculate_dif(table_name: str ,cmp_file: UploadFile = File(...),cmp_obj : Comparision = Depends(Comparision),db : Database = Depends(get_db)) : 
     #print(table_name)
     response = await cmp_obj.compare(db,table_name,cmp_file)
-    return {"data" : response}
+    return {"data" : "hello"}
 
 
