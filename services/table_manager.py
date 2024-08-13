@@ -1,5 +1,6 @@
 import datetime
 import re
+import tempfile
 from fastapi import File, UploadFile, Depends, HTTPException
 import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
@@ -243,8 +244,10 @@ class TableManager:
     
     def download_xls(self,db: Database,table_name : str) :
         df = self.fetch_table_from_db(table_name,db)
-        file = df.to_excel(table_name)
-        return file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+            file_path = tmp.name
+            df.to_excel(file_path, index=False)
+        return file_path
 
         
         

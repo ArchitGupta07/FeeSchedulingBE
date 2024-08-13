@@ -2,7 +2,7 @@ from fastapi import File, UploadFile, Depends
 from fastapi import APIRouter
 from services.comparision import Comparision
 from services.table_manager import TableManager
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 from db import Database, get_db, engine
 
@@ -17,8 +17,8 @@ def get_all_uploaded_files(db : Database = Depends(get_db),table_manager_obj: Ta
 
 @file_router.get('/download/{table_name}')
 def download_file(table_name:str,db : Database = Depends(get_db),table_manager_obj: TableManager = Depends(TableManager)) : 
-    file = table_manager_obj.download_xls(db,table_name)
-    return StreamingResponse(file, media_type="application/octet-stream")
+    file_path = table_manager_obj.download_xls(db,table_name)
+    return FileResponse(file_path, media_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', filename="download.xlsx")
 
     
 
