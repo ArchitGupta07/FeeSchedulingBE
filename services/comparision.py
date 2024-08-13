@@ -15,6 +15,8 @@ class Comparision :
         tbl_obj = TableManager()
 
         df = tbl_obj.find_table_headers(df)
+        print("cols......................",df.columns)
+
         df.columns = [col.lower() for col in df.columns]
         #new df doesnt have hash column we have to retrieve the hash col from the table meta data add apply hash col
         hashable_cols = []
@@ -25,7 +27,7 @@ class Comparision :
 
         hashable_cols = query_data[0].split(",")
         print("cols...........................",hashable_cols)
-        print("cols......................",df.columns)
+        # print("cols......................",df.columns)
         df = add_hash_col(df,hashable_cols)
         return df
     

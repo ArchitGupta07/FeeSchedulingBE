@@ -47,6 +47,7 @@ def convert_to_python_type(value):
 
 
 def remove_null_values(df):
+    print(df.columns)
     for column in df.columns:
         if pd.api.types.is_numeric_dtype(df[column]):
             df[column].fillna(0, inplace=True)  # Fill numeric columns with 0

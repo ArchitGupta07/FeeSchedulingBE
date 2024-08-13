@@ -95,20 +95,41 @@ class TableManager:
 
     def find_table_headers(self, df_temp):       
         print("Original DataFrame:")
-        print(df_temp)
+
+
+        # print(df_temp)
+
+        
+
+        # Step 2: Check if the first row is a valid header
+        non_empty_columns = df_temp.columns[df_temp.notna().any()]
+        num_non_empty_columns = len(non_empty_columns)
+
+        unnamed_columns = [col for col in df_temp.columns if 'Unnamed:' in col]
+        num_unnamed_columns = len(unnamed_columns)
+
+        print(num_non_empty_columns)
 
       
-        max_non_null_count = 0
+        max_non_null_count = num_non_empty_columns-num_unnamed_columns
         longest_row_index = None
+        count=0
 
         for i, row in df_temp.iterrows():
             # Count non-null values
             non_null_count = row.count() - row.isnull().sum()  # Count of non-null values
             total_valid_count = non_null_count  # Only count non-null values
+            if count<=2:
+                print("woe................",total_valid_count, row)
 
+            count+=1
+                
             if total_valid_count > max_non_null_count:
                 max_non_null_count = total_valid_count
                 longest_row_index = i
+
+        print("max............",total_valid_count)
+
 
         if longest_row_index is not None:
             print(f"The longest row with non-null values is at index {longest_row_index} with {max_non_null_count} valid entries:")
@@ -126,7 +147,7 @@ class TableManager:
             return df_with_header
         else:
             print("No valid rows found.")
-            return None
+            return df_temp
 
 
  
