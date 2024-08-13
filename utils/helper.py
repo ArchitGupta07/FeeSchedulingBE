@@ -68,7 +68,7 @@ def remove_null_values(df):
         
         if pd.api.types.is_numeric_dtype(df[column]):
             # Fill numeric columns with 0
-            df[column].fillna(0, inplace=True)
+            df[column].fillna(-1, inplace=True)
         elif pd.api.types.is_string_dtype(df[column]):
             # Fill string columns with '-1.1'
             df[column].fillna('-1', inplace=True)
