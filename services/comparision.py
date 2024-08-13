@@ -11,10 +11,12 @@ class Comparision :
     async def create_df_from_excel(self,table_name : str,cmp_file : UploadFile,db : Database) :
         content = await cmp_file.read()
         df = pd.read_excel(content)
+        tbl_obj = TableManager()
+
         df = tbl_obj.find_table_headers(df)
         df = remove_null_values(df)
         df = convert_column_to_numeric(df)
-        tbl_obj = TableManager()
+        
 
         #print("cols......................",df.columns)
 
@@ -34,6 +36,9 @@ class Comparision :
     
 
     async def compare(self,db: Database,table_name: str , cmp_file : UploadFile) :
+
+
+        
         table_manager_obj = TableManager()
         old_df = table_manager_obj.fetch_table_from_db(table_name ,db)
         #print(old_df)
@@ -90,6 +95,10 @@ class Comparision :
                 
                 # before comparing make a check on the new_df ,if the col is present in  new_df, if not(col is deleted) new_val would be None
                 for col in old_row.index:
+
+                    # print( code)
+
+                    # print("col,,,,",old_row.index)
                     
                     old_value = old_row[col]
                     if col not in new_row.index:

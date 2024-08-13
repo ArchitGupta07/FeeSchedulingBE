@@ -33,6 +33,14 @@ class TableManager:
             if "code" in col.lower():
                 hashable_col = col
         return hashable_col
+    
+
+    def _is_float_like(self, value):
+        try:
+            float(value)  # Try converting the value to float
+            return True
+        except ValueError:
+            return False
         
     def calculate_hashable_col(self, df, exclude_col=""):
         max_unique_count = -1
@@ -42,6 +50,14 @@ class TableManager:
                 continue
             if pd.api.types.is_numeric_dtype(df[col]):
                 continue
+
+            first_five = df[col].astype(str).head(5)  # Convert to string and take the first 5 values
+            can_be_float = any(self._is_float_like(value) for value in first_five)
+
+            if can_be_float:
+                continue
+
+            
             unique_count = df[col].nunique()
             if unique_count > max_unique_count:
                 max_unique_count = unique_count
@@ -170,10 +186,10 @@ class TableManager:
         df = convert_column_to_numeric(df)
         print("second")
         print(df.dtypes)
-        if "fee" in df.columns:
-            print(df["fee"])
-        if "FEE" in df.columns:
-            print(df["FEE"])
+        if "NON-FACILITY GLOBAL FEE" in df.columns:
+            print(df["NON-FACILITY GLOBAL FEE"])
+        # if "FEE" in df.columns:
+        #     print(df["FEE"])
         
 
 
