@@ -21,7 +21,15 @@ def dtype_to_postgres(dtype):
         else:
             return 'text'
 
-
+def convert_column_to_numeric(df):
+    for column_name in df.columns:
+    # Check if all values can be converted to numeric (int or float)
+        if pd.to_numeric(df[column_name], errors='coerce').notnull().all():
+            # Convert to float first, then to int if there are no decimal places
+            df[column_name] = pd.to_numeric(df[column_name])
+            if all(df[column_name] == df[column_name].astype(int)):
+                df[column_name] = df[column_name].astype(int)
+        return df
 
 def hash_row(row, columns):
     print(columns)

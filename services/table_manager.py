@@ -5,7 +5,7 @@ import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
 from db import Database, get_db, engine
 from sqlalchemy.sql import text
-from utils.helper import add_hash_col, infer_type, remove_null_values
+from utils.helper import add_hash_col, convert_column_to_numeric, infer_type, remove_null_values
 import datetime
 
 class TableManager:
@@ -162,6 +162,7 @@ class TableManager:
         
         df = pd.read_excel(content)
         df = self.find_table_headers(df)
+        df = convert_column_to_numeric(df)
 
         df = remove_null_values(df)
 
@@ -173,7 +174,7 @@ class TableManager:
             col1 = self.calculate_hashable_col(df)
         hashable_cols.append(col1)
         hashable_cols.append(self.calculate_hashable_col(df, col1))
-        # print("cols.................................",df.columns )
+        # print("cols.................................",df.columns)
         # print("cols.................................",hashable_cols )
         df = add_hash_col(df, hashable_cols)
         send_df = df

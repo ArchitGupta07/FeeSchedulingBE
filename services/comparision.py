@@ -5,7 +5,7 @@ from sqlalchemy import text
 from db import Database
 from enums import Axis, Operations
 from services.table_manager import TableManager
-from utils.helper import add_hash_col, convert_to_python_type, dtype_to_postgres, infer_type, remove_null_values
+from utils.helper import add_hash_col, convert_column_to_numeric, convert_to_python_type, dtype_to_postgres, infer_type, remove_null_values
 class Comparision : 
     
     async def create_df_from_excel(self,table_name : str,cmp_file : UploadFile,db : Database) :
@@ -39,6 +39,7 @@ class Comparision :
 
         new_df =await self.create_df_from_excel(table_name,cmp_file,db)
         print(new_df)
+        new_df = convert_column_to_numeric(new_df)
         new_df = remove_null_values(new_df)
 
         changes = []
