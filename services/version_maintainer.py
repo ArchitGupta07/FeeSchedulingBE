@@ -10,7 +10,7 @@ class VersionManager(TableManager):
         
 
     def apply_row_changes(self):
-        print("check")
+        #print("check")
         pass
 
     def delete_row_changes(self):

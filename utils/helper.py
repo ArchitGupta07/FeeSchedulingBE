@@ -20,19 +20,23 @@ def dtype_to_postgres(dtype):
             return 'timestamp'
         else:
             return 'text'
-
+        
 def convert_column_to_numeric(df):
     for column_name in df.columns:
-    # Check if all values can be converted to numeric (int or float)
+        # Convert the column to numeric (float), with coercion to handle non-numeric values
         if pd.to_numeric(df[column_name], errors='coerce').notnull().all():
-            # Convert to float first, then to int if there are no decimal places
-            df[column_name] = pd.to_numeric(df[column_name])
-            if all(df[column_name] == df[column_name].astype(int)):
+            df[column_name] = pd.to_numeric(df[column_name], errors='coerce')
+            
+            # Check if all non-null values in the column are equivalent to their integer form
+            if df[column_name].notnull().all() and all(df[column_name].dropna() == df[column_name].dropna().astype(int)):
                 df[column_name] = df[column_name].astype(int)
-        return df
+            else:
+                df[column_name] = df[column_name].astype(float)
+            
+    return df
 
 def hash_row(row, columns):
-    print(columns)
+    #print(columns)
     row_str = ''.join([str(row[col]) for col in columns])  
     hash_result = hashlib.md5(row_str.encode()).hexdigest()
     return hash_result[:10]
@@ -55,15 +59,24 @@ def convert_to_python_type(value):
 
 
 def remove_null_values(df):
-    print(df.columns)
     for column in df.columns:
+        # First, replace empty strings with NaN so they can be filled properly
+        df[column].replace(['', ' ', None], np.nan, inplace=True)
+        df[column].replace(r'^\s*$', np.nan, regex=True, inplace=True)
+
+
+        
         if pd.api.types.is_numeric_dtype(df[column]):
-            df[column].fillna(0, inplace=True)  # Fill numeric columns with 0
+            # Fill numeric columns with 0
+            df[column].fillna(0, inplace=True)
         elif pd.api.types.is_string_dtype(df[column]):
-            df[column].fillna('', inplace=True)  # Fill string columns with empty string
+            # Fill string columns with '-1.1'
+            df[column].fillna('-1', inplace=True)
         elif pd.api.types.is_datetime64_any_dtype(df[column]):
-            df[column].fillna(pd.Timestamp('2001-01-01'), inplace=True)  # Fill datetime columns with a default date
+            # Fill datetime columns with a default date
+            df[column].fillna(pd.Timestamp('2001-01-01'), inplace=True)
         else:
-            # df[column].fillna('unknown', inplace=True)
-            df[column].fillna('', inplace=True)
+            # For other data types, fill with '-1.1'
+            df[column].fillna('-1', inplace=True)
+    
     return df

@@ -15,7 +15,7 @@ class Comparision :
         tbl_obj = TableManager()
 
         df = tbl_obj.find_table_headers(df)
-        print("cols......................",df.columns)
+        #print("cols......................",df.columns)
 
         df.columns = [col.lower() for col in df.columns]
         #new df doesnt have hash column we have to retrieve the hash col from the table meta data add apply hash col
@@ -26,8 +26,8 @@ class Comparision :
         query_data = result.fetchone()
 
         hashable_cols = query_data[0].split(",")
-        print("cols...........................",hashable_cols)
-        # print("cols......................",df.columns)
+        #print("cols...........................",hashable_cols)
+        # #print("cols......................",df.columns)
         df = add_hash_col(df,hashable_cols)
         return df
     
@@ -35,10 +35,10 @@ class Comparision :
     async def compare(self,db: Database,table_name: str , cmp_file : UploadFile) :
         table_manager_obj = TableManager()
         old_df = table_manager_obj.fetch_table_from_db(table_name ,db)
-        print(old_df)
+        #print(old_df)
 
         new_df =await self.create_df_from_excel(table_name,cmp_file,db)
-        print(new_df)
+        #print(new_df)
         new_df = convert_column_to_numeric(new_df)
         new_df = remove_null_values(new_df)
 
@@ -52,7 +52,7 @@ class Comparision :
         # Extract unique codes
         old_codes = old_df.index
         new_codes = new_df.index
-        print("archit")
+        #print("archit")
         for col in new_df.columns:
             print(f"Column: {col}, Data type: {new_df[col].dtype}")
 
@@ -148,7 +148,7 @@ class Comparision :
 
 
 
-        print(table_changes)
+        #print(table_changes)
         return {"cell_changes": changes, "table_changes": table_changes}
  
 

@@ -24,7 +24,7 @@ class TableManager:
         columns = result.keys()  # Retrieve column names from the result
 
         df = pd.DataFrame(rows, columns=columns)
-        print(df)
+        #print(df)
         return df
     
     def extract_code_colname(self, excel_table):
@@ -40,7 +40,7 @@ class TableManager:
         for col in df.columns:
             if col == exclude_col:
                 continue
-            if pd.api.types.is_integer_dtype(df[col]):
+            if pd.api.types.is_numeric_dtype(df[col]):
                 continue
             unique_count = df[col].nunique()
             if unique_count > max_unique_count:
@@ -56,8 +56,8 @@ class TableManager:
 
 
     def find_table_headers(self, df_temp):       
-        print("Original DataFrame:")
-        print(df_temp)
+        #print("Original DataFrame:")
+        #print(df_temp)
 
       
         max_non_null_count = 0
@@ -73,8 +73,8 @@ class TableManager:
                 longest_row_index = i
 
         if longest_row_index is not None:
-            print(f"The longest row with non-null values is at index {longest_row_index} with {max_non_null_count} valid entries:")
-            print(df_temp.iloc[longest_row_index])
+            #print(f"The longest row with non-null values is at index {longest_row_index} with {max_non_null_count} valid entries:")
+            #print(df_temp.iloc[longest_row_index])
 
             # Step 3: Set the header to the identified row and create a new DataFrame
             df_with_header = df_temp.iloc[longest_row_index:]  # Get the DataFrame starting from the header row
@@ -82,22 +82,22 @@ class TableManager:
             df_with_header = df_with_header[1:]  # Remove the header row from the DataFrame
             df_with_header.reset_index(drop=True, inplace=True)  # Reset index
 
-            print("Full table with the header set:")
-            print(df_with_header)
+            #print("Full table with the header set:")
+            #print(df_with_header)
             
             return df_with_header
         else:
-            print("No valid rows found.")
+            #print("No valid rows found.")
             return None
 
 
 
 
     def find_table_headers(self, df_temp):       
-        print("Original DataFrame:")
+        #print("Original DataFrame:")
 
 
-        # print(df_temp)
+        # #print(df_temp)
 
         
 
@@ -108,7 +108,7 @@ class TableManager:
         unnamed_columns = [col for col in df_temp.columns if 'Unnamed:' in col]
         num_unnamed_columns = len(unnamed_columns)
 
-        print(num_non_empty_columns)
+        #print(num_non_empty_columns)
 
       
         max_non_null_count = num_non_empty_columns-num_unnamed_columns
@@ -128,12 +128,12 @@ class TableManager:
                 max_non_null_count = total_valid_count
                 longest_row_index = i
 
-        print("max............",total_valid_count)
+        #print("max............",total_valid_count)
 
 
         if longest_row_index is not None:
-            print(f"The longest row with non-null values is at index {longest_row_index} with {max_non_null_count} valid entries:")
-            print(df_temp.iloc[longest_row_index])
+            #print(f"The longest row with non-null values is at index {longest_row_index} with {max_non_null_count} valid entries:")
+            #print(df_temp.iloc[longest_row_index])
 
             # Step 3: Set the header to the identified row and create a new DataFrame
             df_with_header = df_temp.iloc[longest_row_index:]  # Get the DataFrame starting from the header row
@@ -141,12 +141,12 @@ class TableManager:
             df_with_header = df_with_header[1:]  # Remove the header row from the DataFrame
             df_with_header.reset_index(drop=True, inplace=True)  # Reset index
 
-            print("Full table with the header set:")
-            print(df_with_header)
+            #print("Full table with the header set:")
+            #print(df_with_header)
             
             return df_with_header
         else:
-            print("No valid rows found.")
+            #print("No valid rows found.")
             return df_temp
 
 
@@ -161,10 +161,20 @@ class TableManager:
         table_name = self.generate_table_name(table_prefix)
         
         df = pd.read_excel(content)
+       
         df = self.find_table_headers(df)
-        df = convert_column_to_numeric(df)
+
+        
 
         df = remove_null_values(df)
+        df = convert_column_to_numeric(df)
+        print("second")
+        print(df.dtypes)
+        if "fee" in df.columns:
+            print(df["fee"])
+        if "FEE" in df.columns:
+            print(df["FEE"])
+        
 
 
         hashable_cols = []
@@ -174,8 +184,8 @@ class TableManager:
             col1 = self.calculate_hashable_col(df)
         hashable_cols.append(col1)
         hashable_cols.append(self.calculate_hashable_col(df, col1))
-        # print("cols.................................",df.columns)
-        # print("cols.................................",hashable_cols )
+        # #print("cols.................................",df.columns)
+        # #print("cols.................................",hashable_cols )
         df = add_hash_col(df, hashable_cols)
         send_df = df
         try:
@@ -183,7 +193,7 @@ class TableManager:
                 # Create the table
                 df.to_sql(table_name, engine, index=False, if_exists='replace')
 
-                print(df)
+                #print(df)
 
                 # Insert the metadata
                 hashable_cols_str = ",".join(hashable_cols)
@@ -199,7 +209,7 @@ class TableManager:
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
         # send_df.set_index("hash", inplace=True)
 
-        print(send_df)
+        #print(send_df)
         return send_df.to_dict(orient='records'),table_name,file.filename
     
     
@@ -208,9 +218,9 @@ class TableManager:
         #return all the table data
         query = text(f"SELECT table_name, file_name FROM table_details")
         result = db.execute(query)
-        print("------------------------------------------")
+        #print("------------------------------------------")
         rows = result.fetchall()
-        print(rows)
+        #print(rows)
         files = [{"table_name": row.table_name, "file_name": row.file_name} for row in rows]
 
         return files
