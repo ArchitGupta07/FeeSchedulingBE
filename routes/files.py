@@ -1,4 +1,4 @@
-from fastapi import File, UploadFile, Depends
+from fastapi import File, HTTPException, Query, UploadFile, Depends
 from fastapi import APIRouter
 from services.comparision import Comparision
 from services.table_manager import TableManager
@@ -10,9 +10,14 @@ from db import Database, get_db, engine
 
 
 file_router = APIRouter()
+# @file_router.get("/")
+# def get_all_uploaded_files(db : Database = Depends(get_db),table_manager_obj: TableManager = Depends(TableManager)) : 
+#     response = table_manager_obj.get_all_files(db)
+#     return {"data" : response}
 @file_router.get("/")
-def get_all_uploaded_files(db : Database = Depends(get_db),table_manager_obj: TableManager = Depends(TableManager)) : 
-    response = table_manager_obj.get_all_files(db)
+def get_all_uploaded_files( statename: str = Query(None),  # Query parameter for state name
+    category: str = Query(None), db : Database = Depends(get_db),table_manager_obj: TableManager = Depends(TableManager)) : 
+    response = table_manager_obj.get_all_files(db,statename,category)
     return {"data" : response}
 
 @file_router.get('/download/{table_name}')
@@ -65,4 +70,12 @@ async def calculate_dif(table_name: str ,cmp_file: UploadFile = File(...),cmp_ob
     response = await cmp_obj.compare(db,table_name,cmp_file)
     return {"data" : response}
 
+
+@file_router.put("/update/{table_name}")
+async def update_item(table_name:str, item: dict):
+    if item:
+        print(item)        
+        return {"message": "Tabel updated successfully"}
+    else:
+        raise HTTPException(status_code=404, detail="Unsuccesful table update Attempt")
 

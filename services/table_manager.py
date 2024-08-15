@@ -1,4 +1,5 @@
-import datetime
+# import datetime
+from datetime import datetime
 import re
 import tempfile
 from fastapi import File, UploadFile, Depends, HTTPException
@@ -213,9 +214,12 @@ class TableManager:
                 #print(df)
 
                 # Insert the metadata
+
+                state = "new york"
+                category = "dental"
                 hashable_cols_str = ",".join(hashable_cols)
-                query = text("INSERT INTO table_details (table_name, hashable_cols,file_name) VALUES (:table_name, :hashable_cols,:file_name)")
-                db.execute(query, {"table_name": table_name, "hashable_cols": hashable_cols_str,"file_name" : file.filename})
+                query = text("INSERT INTO table_details (table_name, hashable_cols,file_name, statename,category) VALUES (:table_name, :hashable_cols,:file_name,:statename,:category)")
+                db.execute(query, {"table_name": table_name, "hashable_cols": hashable_cols_str,"file_name" : file.filename, "statename":state, "category":category})
                 
                 # Commit the transaction
                 # transaction.commit()
@@ -231,16 +235,20 @@ class TableManager:
     
     
     
-    def get_all_files(self,db : Database) :
+    def get_all_files(self,db : Database,statename:str,category:str) :
         #return all the table data
-        query = text(f"SELECT table_name, file_name FROM table_details")
-        result = db.execute(query)
+        query = text("SELECT table_name, file_name, created_at FROM table_details WHERE statename = :statename AND category = :category")
+
+    # Execute the query with parameters
+        result = db.execute(query, {"statename": statename, "category": category})
         #print("------------------------------------------")
         rows = result.fetchall()
         #print(rows)
-        files = [{"table_name": row.table_name, "file_name": row.file_name} for row in rows]
+        files = [{"table_name": row.table_name, "file_name": row.file_name, "created_at":row.created_at,  "date": str(row.created_at)[:10]} for row in rows]
+        files = sorted(files, key=lambda x: x["created_at"])
+        versions = {i + 1: file for i, file in enumerate(files)}
 
-        return files
+        return versions
     
     def download_xls(self,db: Database,table_name : str) :
         df = self.fetch_table_from_db(table_name,db)
