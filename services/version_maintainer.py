@@ -1,19 +1,36 @@
 
 from sqlalchemy import text
-from services.table_manager import TableManager
+
 
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException
+# 
+import pandas as pd
+from db import Database
 
 
-class VersionManager(TableManager):
+class VersionManager():
 
-    def __init__(self, table_name,db) -> None:
+    def __init__(self, table_name) -> None:
         self.table_name = table_name
-        self.db = db
+        self.db = Database()
         
         # self.df = super().fetch_table_from_db(table_name, db:Database)
         
+
+    def fetch_table_from_db_check(self) :
+        query = text(f"SELECT * FROM {self.table_name}")
+        try :
+            result = self.db.execute(query)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        rows = result.fetchall()
+
+        columns = result.keys()  # Retrieve column names from the result
+
+        df = pd.DataFrame(rows, columns=columns)
+        print(df.to_dict(orient="records"))
+        return df
 
     def apply_row_changes(self):
         #print("check")
@@ -126,3 +143,10 @@ class VersionManager(TableManager):
             # Rollback the transaction in case of an error
             self.db.rollback()
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        
+
+
+
+check = VersionManager("cell_changes")
+
+print(check.fetch_table_from_db_check())

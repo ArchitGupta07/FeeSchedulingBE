@@ -14,6 +14,10 @@ file_router = APIRouter()
 # def get_all_uploaded_files(db : Database = Depends(get_db),table_manager_obj: TableManager = Depends(TableManager)) : 
 #     response = table_manager_obj.get_all_files(db)
 #     return {"data" : response}
+# def get_table_manager(db : Database = Depends(get_db)):
+#     return TableManager(db)
+
+
 @file_router.get("/")
 def get_all_uploaded_files( statename: str = Query(None),  # Query parameter for state name
     category: str = Query(None), db : Database = Depends(get_db),table_manager_obj: TableManager = Depends(TableManager)) : 
