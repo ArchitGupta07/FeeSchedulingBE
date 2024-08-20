@@ -145,8 +145,10 @@ class VersionManager():
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
         
 
+    def apply_new_changes(tableName, newColumns, deletedCols):
+        
+        pass
 
+# check = VersionManager("cell_changes")
 
-check = VersionManager("cell_changes")
-
-print(check.fetch_table_from_db_check())
+# print(check.fetch_table_from_db_check())

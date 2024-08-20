@@ -1,6 +1,9 @@
-from fastapi import File, HTTPException, Query, UploadFile, Depends
+from typing import List
+from fastapi import File, HTTPException, Query, UploadFile, Depends, Form
 from fastapi import APIRouter
+from pydantic import BaseModel
 from services.comparision import Comparision
+from services.version_maintainer import VersionManager
 from services.table_manager import TableManager
 from fastapi.responses import FileResponse, StreamingResponse
 
@@ -57,8 +60,10 @@ async def get_file_data(table_name : str,db : Database = Depends(get_db),cmp_obj
         "in the database. The file should be in XLSX format, and the data will be inserted "
         "into a database table managed by the TableManager."
     ))
-async def upload_file(file: UploadFile = File(...), table_manager_obj: TableManager = Depends(TableManager),db : Database = Depends(get_db)):
-    data,table_name,file_name = await table_manager_obj.insert_table(db,file)
+async def upload_file(file: UploadFile = File(...), stateName: str = Form(...),category: str = Form(...),table_manager_obj: TableManager = Depends(TableManager),db : Database = Depends(get_db)):
+
+    print("upload",stateName, category)
+    data,table_name,file_name = await table_manager_obj.insert_table(db,stateName, category,file)
     return {"data" : data, "table_name" : table_name, "file_name" : file_name}
 
 
@@ -75,11 +80,38 @@ async def calculate_dif(table_name: str ,cmp_file: UploadFile = File(...),cmp_ob
     return {"data" : response}
 
 
-@file_router.put("/update/{table_name}")
-async def update_item(table_name:str, item: dict):
-    if item:
-        print(item)        
-        return {"message": "Tabel updated successfully"}
-    else:
-        raise HTTPException(status_code=404, detail="Unsuccesful table update Attempt")
+# @file_router.put("/update/{table_name}")
+# async def update_item(table_name:str, item: dict):
+#     if item:
+#         print(item)        
+#         return {"message": "Tabel updated successfully"}
+#     else:
+#         raise HTTPException(status_code=404, detail="Unsuccesful table update Attempt")
 
+class FileChanges(BaseModel):
+    newColumns: List[str]
+    deletedCols: List[str]
+
+@file_router.post("/update/{tableName}")
+async def update_file(tableName: str, changes: FileChanges, version_obj:VersionManager=Depends(VersionManager), db : Database = Depends(get_db)):
+    try:
+        # Process the file changes here
+        new_columns = changes.newColumns
+        deleted_cols = changes.deletedCols
+        
+        # Here you can add your logic to update the database or file system
+        # For demonstration purposes, we'll just return a success message.
+        
+        # Replace the following with your actual update logic
+        print(f"Table Name: {tableName}")
+        print(f"New Columns: {new_columns}")
+        print(f"Deleted Columns: {deleted_cols}")
+
+        version_obj.apply_new_changes(tableName, new_columns, deleted_cols)
+        
+        # Returning a success response
+        return {"message": "File updated successfully"}
+    
+    except Exception as e:
+        # Handle any exceptions that may occur
+        raise HTTPException(status_code=500, detail=str(e))

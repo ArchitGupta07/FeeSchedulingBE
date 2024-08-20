@@ -170,7 +170,7 @@ class TableManager:
 
  
     
-    async def insert_table(self,db : Database, file: UploadFile = File(...)) :
+    async def insert_table(self,db : Database, stateName, category, file: UploadFile = File(...)) :
         content = await file.read()
 
         file_name = file.filename.split(".")[0].lower()
@@ -186,10 +186,10 @@ class TableManager:
 
         df = remove_null_values(df)
         df = convert_column_to_numeric(df)
-        print("second")
-        print(df.dtypes)
-        if "NON-FACILITY GLOBAL FEE" in df.columns:
-            print(df["NON-FACILITY GLOBAL FEE"])
+        # print("second")
+        # print(df.dtypes)
+        # if "NON-FACILITY GLOBAL FEE" in df.columns:
+        #     print(df["NON-FACILITY GLOBAL FEE"])
         # if "FEE" in df.columns:
         #     print(df["FEE"])
         
@@ -215,12 +215,22 @@ class TableManager:
 
                 # Insert the metadata
 
-                state = "new york"
-                category = "dental"
+                active_cols = [col.lower() for col in df.columns]
+
                 hashable_cols_str = ",".join(hashable_cols)
-                query = text("INSERT INTO table_details (table_name, hashable_cols,file_name, statename,category) VALUES (:table_name, :hashable_cols,:file_name,:statename,:category)")
-                db.execute(query, {"table_name": table_name, "hashable_cols": hashable_cols_str,"file_name" : file.filename, "statename":state, "category":category})
+                query1 = text("INSERT INTO table_details (table_name, hashable_cols,file_name, statename,category, active_columns) VALUES (:table_name, :hashable_cols,:file_name,:statename,:category,:active_cols)")
+                db.execute(query1, {"table_name": table_name, "hashable_cols": hashable_cols_str,"file_name" : file.filename, "statename":stateName.lower(), "category":category.lower(), "active_cols":active_cols})
+
+
                 
+                query2 = text("INSERT INTO table_versions (table_name, isapproved, active_columns) VALUES (:table_name,:approvedStatus,:active_cols)")
+                db.execute(query2, {"table_name": table_name,"approvedStatus":True, "active_cols":active_cols})
+
+                
+                
+
+
+
                 # Commit the transaction
                 # transaction.commit()
 
@@ -237,14 +247,14 @@ class TableManager:
     
     def get_all_files(self,db : Database,statename:str,category:str) :
         #return all the table data
-        query = text("SELECT table_name, file_name, created_at FROM table_details WHERE statename = :statename AND category = :category")
+        query = text("SELECT table_name, file_name, created_at, active_columns FROM table_details WHERE statename = :statename AND category = :category")
 
     # Execute the query with parameters
-        result = db.execute(query, {"statename": statename, "category": category})
+        result = db.execute(query, {"statename": statename.lower(), "category": category.lower()})
         #print("------------------------------------------")
         rows = result.fetchall()
         #print(rows)
-        files = [{"table_name": row.table_name, "file_name": row.file_name, "created_at":row.created_at,  "date": str(row.created_at)[:10]} for row in rows]
+        files = [{"table_name": row.table_name, "file_name": row.file_name, "created_at":row.created_at,  "date": str(row.created_at)[:10], "active_columns":row.active_columns} for row in rows]
         files = sorted(files, key=lambda x: x["created_at"])
         versions = {i + 1: file for i, file in enumerate(files)}
 
