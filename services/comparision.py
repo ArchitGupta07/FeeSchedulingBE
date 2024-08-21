@@ -94,7 +94,7 @@ class Comparision :
                 if added_columns:
                     table_changes.append({
                         "type" : Axis.COLUMN.name,
-                        "operation": Operations.ADD.name,
+                        "operations": Operations.ADD.name,
                         "values": json.dumps(added_columns)
                     })
                 
@@ -105,7 +105,7 @@ class Comparision :
                 if deleted_columns:
                     table_changes.append({
                         "type" : Axis.COLUMN.name,
-                        "operation": Operations.DELETE.name,
+                        "operations": Operations.DELETE.name,
                         "values": json.dumps(deleted_columns)
                     })
                 
@@ -133,7 +133,7 @@ class Comparision :
                                     old_value = convert_to_python_type(old_row[col])
                                     new_value = convert_to_python_type(new_row[col])
                                     changes.append({
-                                        "type": Operations.UPDATE.name,
+                                        "operations": Operations.UPDATE.name,
                                         "row_name": code,
                                         "column_name": col,
                                         "old_value": old_value,
@@ -145,7 +145,7 @@ class Comparision :
                             if col not in old_row.index:
                                 new_value = convert_to_python_type(new_row[col])
                                 changes.append({
-                                    "type": Operations.UPDATE.name,  #here we can say that the data is updated
+                                    "operations": Operations.UPDATE.name,  #here we can say that the data is updated
                                     "row_name": code,
                                     "column_name": col,
                                     "old_value": None,  # No old value since the column is new
@@ -159,7 +159,7 @@ class Comparision :
                         for col in new_df.columns:
                             new_value = convert_to_python_type(new_df.at[code, col])
                             changes.append({
-                                "type": Operations.ADD.name,
+                                "operations": Operations.ADD.name,
                                 "row_name": code,
                                 "column_name": col,
                                 "old_value" : None,
@@ -174,7 +174,7 @@ class Comparision :
                         deleted_rows[code] = ""
                         table_changes.append({
                         "type" : Axis.ROW.name,
-                        "operation": Operations.DELETE.name,
+                        "operations": Operations.DELETE.name,
                         "values": json.dumps(deleted_rows)
                         }) 
     
@@ -184,10 +184,10 @@ class Comparision :
                         VALUES (:version_id, :type, :operations, :values)
                     """)
                     data = {
-                        'version_id': letest_version[0],          # UUID
-                        'type': val["type"],            # Enum value as string
-                        'operations': val["operation"], # Enum value as string
-                        'values': val["values"]         # JSONB data
+                        'version_id': letest_version[0],
+                        'type': val["type"],
+                        'operations': val["operations"], 
+                        'values': val["values"] 
                     }
                     db.execute(query, data)
                     #insert all the cell_changes as well
@@ -198,7 +198,7 @@ class Comparision :
                     data = [
                                 {
                                     'version_id': letest_version[0],
-                                    'operations': change["type"],  # Enum value as string
+                                    'operations': change["operations"],
                                     'row_name': change["row_name"],
                                     'column_name': change["column_name"],
                                     'old_value': change["old_value"],
