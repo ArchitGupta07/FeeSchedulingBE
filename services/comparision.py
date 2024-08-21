@@ -154,8 +154,15 @@ class Comparision :
 
 
                 # Detect added rows (added codes)
+                added_rows = {}
                 for code in new_codes:
                     if code not in old_codes:
+                        added_rows[code] = ""
+                        table_changes.append({
+                        "type" : Axis.ROW.name,
+                        "operations": Operations.ADD.name,
+                        "values": json.dumps(added_rows)
+                        })
                         for col in new_df.columns:
                             new_value = convert_to_python_type(new_df.at[code, col])
                             changes.append({
