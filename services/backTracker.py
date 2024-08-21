@@ -47,6 +47,9 @@ class BackTracker():
             rows = result.fetchall()
             
             # List to hold all version_ids newer than the current one
+            if not rows:
+                return []
+
             newer_version_ids = [row.id for row in rows]
 
             print(newer_version_ids)
@@ -123,18 +126,46 @@ class BackTracker():
     def revert_cell_changes(self, table_name, version_id):
         pass
 
+    def deleted_table_rows(self,version_id):
+        delete_hashes= {}
+        table_changes_query = text("""
+                SELECT values
+                FROM table_changes 
+                WHERE version_id = :version_id and type = 'ROW' AND operations = 'DELETE'   
+            """)
+            
+        result = self.db.execute(table_changes_query, {"version_id": version_id})
+        rows = result.fetchall()
+        if rows:
+            row = rows[-1]
+            delete_hashes.update(row[0])
+        print(delete_hashes)
+        return [hash for hash in delete_hashes]
 
-    def revert_table_changes(self,table_name,version_id):
 
-        active_columns = self.get_current_table_cols(version_id)
+
+    def get_table_version_data(self,table_name,version_id):
+
+        
         table_manager_obj = TableManager()
         df = table_manager_obj.fetch_table_from_db(table_name,self.db)
 
+
+        newer_versions =  self.get_newer_version_ids(table_name, version_id)
+
+        delete_rows = self.deleted_table_rows(version_id) 
+        df = df[~df['hash'].isin(delete_rows)]       
+
+        if not newer_versions:
+        
+            return df
+
+
+        active_columns = self.get_current_table_cols(version_id)
         columns_to_remove = [col for col in df.columns if col not in active_columns]
         df = df.drop(columns=columns_to_remove)
 
 
-        newer_versions =  self.get_newer_version_ids(table_name, version_id)
 
         new_row_hashes= self.get_new_hashes(newer_versions)
 

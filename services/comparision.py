@@ -8,6 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from db import Database
 from enums import Axis, Operations
 from services.table_manager import TableManager
+from services.backTracker import BackTracker
 from utils.helper import add_hash_col, convert_column_to_numeric, convert_to_python_type, dtype_to_postgres, infer_type, remove_null_values
 class Comparision : 
     
@@ -312,8 +313,12 @@ class Comparision :
 
 
         active_columns = self.get_table_columns(table_name, id, db)
-        table_manager_obj = TableManager()
-        df = table_manager_obj.fetch_table_from_db(table_name,db)
+        back_trac_obj = BackTracker()
+        df = back_trac_obj.get_table_version_data(table_name, id)
+        
+        # table_manager_obj = TableManager()
+        # 
+        # df = table_manager_obj.fetch_table_from_db(table_name,db)
         df = remove_null_values(df)
 
         
