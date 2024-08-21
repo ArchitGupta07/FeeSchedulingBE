@@ -226,7 +226,12 @@ class TableManager:
                 query2 = text("INSERT INTO table_versions (table_name, isapproved, active_columns) VALUES (:table_name,:approvedStatus,:active_cols)")
                 db.execute(query2, {"table_name": table_name,"approvedStatus":True, "active_cols":active_cols})
 
-                
+
+                alter_query = text(f"""ALTER TABLE {table_name} ADD CONSTRAINT unique_hash UNIQUE (hash)""")
+                db.execute(alter_query)
+
+
+
                 
 
 
@@ -247,14 +252,16 @@ class TableManager:
     
     def get_all_files(self,db : Database,statename:str,category:str) :
         #return all the table data
-        query = text("SELECT table_name, file_name, created_at, active_columns FROM table_details WHERE statename = :statename AND category = :category")
+        # query = text("SELECT table_name, file_name, created_at, active_columns FROM table_details WHERE statename = :statename AND category = :category")
+        query = text("SELECT td.table_name, td.file_name, tv.created_at, tv.id, tv.active_columns, tv.isapproved FROM table_details td INNER JOIN table_versions tv ON td.table_name = tv.table_name WHERE td.statename = :statename AND td.category = :category")
+
 
     # Execute the query with parameters
         result = db.execute(query, {"statename": statename.lower(), "category": category.lower()})
         #print("------------------------------------------")
         rows = result.fetchall()
         #print(rows)
-        files = [{"table_name": row.table_name, "file_name": row.file_name, "created_at":row.created_at,  "date": str(row.created_at)[:10], "active_columns":row.active_columns} for row in rows]
+        files = [{"id":row.id,"table_name": row.table_name, "file_name": row.file_name, "created_at":row.created_at,  "date": str(row.created_at)[:10], "active_columns":row.active_columns, "isapproved":row.isapproved} for row in rows]
         files = sorted(files, key=lambda x: x["created_at"])
         versions = {i + 1: file for i, file in enumerate(files)}
 

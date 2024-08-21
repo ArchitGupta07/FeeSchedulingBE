@@ -1,8 +1,10 @@
 import json
 import traceback
+
 from fastapi import File, HTTPException, UploadFile
 import pandas as pd
 from sqlalchemy import text
+from sqlalchemy.exc import SQLAlchemyError
 from db import Database
 from enums import Axis, Operations
 from services.table_manager import TableManager
@@ -236,6 +238,37 @@ class Comparision :
     
     def apply_changes() : 
         return
+    
+    
+
+    def get_cell_changes(self, version_id: str, db: Database):
+    # Define the SQL query to retrieve data from the cell_changes table based on version_id
+        query = text("""
+            SELECT * 
+            FROM cell_changes 
+            WHERE version_id = :version_id
+        """)
+        
+        try:
+            # Execute the query with the provided version_id
+            result = db.execute(query, {"version_id": version_id})
+        except SQLAlchemyError as e:
+            # Handle any database errors
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        
+        # Fetch all rows from the result
+        rows = result.fetchall()
+
+        # Retrieve column names from the result
+        columns = result.keys()
+
+        # Convert the result to a DataFrame
+        df = pd.DataFrame(rows, columns=columns)
+
+        print(df.to_dict(orient="records"))
+        
+        return df.to_dict(orient="records")
+
     
     def get_table_data(self,table_name,db : Database) : 
         table_manager_obj = TableManager()

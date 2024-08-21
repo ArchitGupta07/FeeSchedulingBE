@@ -11,15 +11,15 @@ from db import Database
 
 class VersionManager():
 
-    def __init__(self, table_name) -> None:
+    def __init__(self, table_name=None) -> None:
         self.table_name = table_name
         self.db = Database()
         
         # self.df = super().fetch_table_from_db(table_name, db:Database)
         
 
-    def fetch_table_from_db_check(self) :
-        query = text(f"SELECT * FROM {self.table_name}")
+    def fetch_table_from_db_check(self, table_name) :
+        query = text(f"SELECT * FROM {table_name}")
         try :
             result = self.db.execute(query)
         except Exception as e:
@@ -29,8 +29,55 @@ class VersionManager():
         columns = result.keys()  # Retrieve column names from the result
 
         df = pd.DataFrame(rows, columns=columns)
-        print(df.to_dict(orient="records"))
-        return df
+        # print(df.to_dict(orient="records"))
+        return df.to_dict(orient="records")
+    
+    def get_table_version(self, table_name ) :
+        query = text("SELECT * FROM table_versions WHERE table_name = :table_name")
+        try:
+            # Execute the query with the table_name as a parameter
+            result = self.db.execute(query, {"table_name": table_name})
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        rows = result.fetchall()
+
+        columns = result.keys()  # Retrieve column names from the result
+
+        df = pd.DataFrame(rows, columns=columns)
+        # print(df.to_dict(orient="records"))
+        return df.to_dict(orient="records")
+    
+
+    def get_table_changes(self, version_id ) :
+        query = text("SELECT * FROM table_changes WHERE version_id = :version_id")
+        try:
+            # Execute the query with the table_name as a parameter
+            result = self.db.execute(query, {"version_id": version_id})
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        rows = result.fetchall()
+
+        columns = result.keys()  # Retrieve column names from the result
+
+        df = pd.DataFrame(rows, columns=columns)
+        # print(df.to_dict(orient="records"))
+        return df.to_dict(orient="records")
+    
+
+    def get_cell_changes(self, version_id ) :
+        query = text("SELECT * FROM cell_changes WHERE version_id = :version_id")
+        try:
+            # Execute the query with the table_name as a parameter
+            result = self.db.execute(query, {"version_id": version_id})
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        rows = result.fetchall()
+
+        columns = result.keys()  # Retrieve column names from the result
+
+        df = pd.DataFrame(rows, columns=columns)
+        # print(df.to_dict(orient="records"))
+        return df.to_dict(orient="records")
 
     def apply_row_changes(self):
         #print("check")
@@ -101,25 +148,33 @@ class VersionManager():
         pass
     
     def delete_cell_changes(self):
+
+
+
         pass
 
     
-    def add_new_columns(self,new_columns):
-        try:
-        # Iterate through the list of new columns and add each to the table
-            for col_name in new_columns:
-                # Construct the ALTER TABLE query to add a new column with NULL default
+    def add_new_columns(self,new_columns, table_name):   
 
-                alter_query_parts = []
-                for col_name, col_type in new_columns.items():
-                    alter_query_parts.append(f"ADD COLUMN {col_name} {col_type} DEFAULT NULL")
+        try:
+            # Iterate through the dictionary of new columns and their types
+            for col_name, col_type in new_columns.items():
+                # Check if the column already exists in the table
+                check_column_query = text(f"""
+                    SELECT column_name 
+                    FROM information_schema.columns 
+                    WHERE table_name = :table_name 
+                    AND column_name = :col_name
+                """)
+                result = self.db.execute(check_column_query, {"table_name": table_name, "col_name": col_name}).fetchone()
+
+                if result is None:  # Column does not exist
+                    # Construct the ALTER TABLE query to add the new column with NULL default
+                    alter_query = text(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type} DEFAULT NULL")
+                    self.db.execute(alter_query)
                 
-                alter_query = f"ALTER TABLE {self.table_name} " + ", ".join(alter_query_parts)
-                # alter_query = text(f"ALTER TABLE {table_name} ADD COLUMN {col_name} TEXT DEFAULT NULL")
-                self.db.execute(alter_query)
-            
             # Commit the changes to the database
-            self.db.commit()
+            # self.db.commit()
 
         except SQLAlchemyError as e:
             # Rollback the transaction in case of an error
@@ -137,17 +192,113 @@ class VersionManager():
                 self.db.execute(drop_query)
             
             # Commit the changes to the database
-            self.db.commit()
+            # self.db.commit()
 
         except SQLAlchemyError as e:
             # Rollback the transaction in case of an error
             self.db.rollback()
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-        
 
-    def apply_new_changes(tableName, newColumns, deletedCols):
-        
-        pass
+    def apply_table_operations(self, operations_data, table_name):
+        try:
+            for operation in operations_data:
+                operation_type = operation['operations'].upper()
+                row_hash = operation['row_name']  # This is the unique identifier for the row
+                column_name = operation['column_name']
+                new_value = operation['new_value']
+
+                if operation_type == "ADD":
+                    # Insert a new row or update the column in the table
+                    insert_query = text(f"""
+                        INSERT INTO {table_name} (hash, {column_name})
+                        VALUES (:row_hash, :new_value)
+                        ON CONFLICT (hash) DO UPDATE 
+                        SET {column_name} = :new_value
+                    """)
+                    self.db.execute(insert_query, {"row_hash": row_hash, "new_value": new_value})
+
+                elif operation_type == "UPDATE":
+                    # Update the existing row in the table
+                    update_query = text(f"""
+                        UPDATE {table_name}
+                        SET {column_name} = :new_value
+                        WHERE hash = :row_hash
+                    """)
+                    self.db.execute(update_query, {"row_hash": row_hash, "new_value": new_value})
+
+                elif operation_type == "DELETE":
+                    # Delete the row from the table (if DELETE operation was present)
+                    delete_query = text(f"""
+                        DELETE FROM {table_name}
+                        WHERE hash = :row_hash
+                    """)
+                    self.db.execute(delete_query, {"row_hash": row_hash})
+
+               
+
+            # Commit the changes
+            # self.db.commit()
+
+        except SQLAlchemyError as e:
+            # Rollback in case of an error
+            print(e)
+            # self.db.rollback()
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+
+    def apply_new_changes(self, tableName):
+
+        self.tableName=tableName
+
+        data  = self.get_table_version(tableName)
+        unapproved_entries = [entry for entry in data if not entry['isapproved']]
+
+        # Sort by created_at in descending order
+        unapproved_entries.sort(key=lambda x: x['created_at'], reverse=True)
+
+        # Get the UUID of the latest unapproved entry
+        if unapproved_entries:
+            latest_unapproved_uuid = unapproved_entries[0]['id']
+            print(f"The UUID of the latest unapproved entry is: {latest_unapproved_uuid}")
+        else:
+            print("No unapproved entries found.")
+
+
+        data = self.fetch_table_from_db_check("table_changes")
+
+        data = self.get_table_changes(latest_unapproved_uuid)
+        print(data)
+
+        new_columns = {}
+        deleted_cols = {}
+        deleted_rows = []
+
+        for item in data:
+            if item["type"]=="COLUMN":
+                if item["operations"]=="ADD":
+                    new_columns.update(item["values"])
+                elif item["operations"]=="DELETE":
+                    deleted_cols.update(item["values"])
+            
+            else:
+                for hashes in item["values"]:
+                    deleted_rows.append(hashes)
+            
+        # print(new_columns, deleted_cols, deleted_rows)
+
+        self.add_new_columns(new_columns, tableName)
+
+        newData = self.get_cell_changes(latest_unapproved_uuid)
+
+
+
+        print(newData)
+
+        self.apply_table_operations(newData, tableName)
+                
+
+
+
+        return None
 
 # check = VersionManager("cell_changes")
 

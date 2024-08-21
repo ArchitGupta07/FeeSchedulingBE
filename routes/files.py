@@ -22,7 +22,7 @@ file_router = APIRouter()
 
 
 @file_router.get("/")
-def get_all_uploaded_files( statename: str = Query(None),  # Query parameter for state name
+def get_all_uploaded_files( statename: str = Query(None), 
     category: str = Query(None), db : Database = Depends(get_db),table_manager_obj: TableManager = Depends(TableManager)) : 
     response = table_manager_obj.get_all_files(db,statename,category)
     return {"data" : response}
@@ -80,6 +80,11 @@ async def calculate_dif(table_name: str ,cmp_file: UploadFile = File(...),cmp_ob
     return {"data" : response}
 
 
+@file_router.get("/get_cell_changes/{id}")
+async def get_file_data(id : str,db : Database = Depends(get_db),cmp_obj : Comparision = Depends(Comparision)) :
+    table_data  = cmp_obj.get_cell_changes(id,db)
+    return {"data" : table_data}
+
 # @file_router.put("/update/{table_name}")
 # async def update_item(table_name:str, item: dict):
 #     if item:
@@ -87,6 +92,10 @@ async def calculate_dif(table_name: str ,cmp_file: UploadFile = File(...),cmp_ob
 #         return {"message": "Tabel updated successfully"}
 #     else:
 #         raise HTTPException(status_code=404, detail="Unsuccesful table update Attempt")
+
+
+
+
 
 class FileChanges(BaseModel):
     newColumns: List[str]
@@ -107,7 +116,7 @@ async def update_file(tableName: str, changes: FileChanges, version_obj:VersionM
         print(f"New Columns: {new_columns}")
         print(f"Deleted Columns: {deleted_cols}")
 
-        version_obj.apply_new_changes(tableName, new_columns, deleted_cols)
+        version_obj.apply_new_changes(tableName)
         
         # Returning a success response
         return {"message": "File updated successfully"}

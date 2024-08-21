@@ -4,6 +4,6 @@
 from services.version_maintainer import VersionManager
 
 
-check  = ("cell_changes")
+check  = VersionManager("cell_changes")
 
-print(check.fetch_table_from_db_check())
+print(check.apply_new_changes("demo10_20240820_141456"))
