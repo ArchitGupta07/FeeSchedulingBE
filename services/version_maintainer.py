@@ -199,12 +199,13 @@ class VersionManager():
             self.db.rollback()
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
-    def apply_table_operations(self, operations_data, table_name):
+    def apply_table_operations(self, operations_data, table_name, version_id):
         try:
             for operation in operations_data:
                 operation_type = operation['operations'].upper()
                 row_hash = operation['row_name']  # This is the unique identifier for the row
-                column_name = operation['column_name']
+                # column_name = operation['column_name']
+                column_name = f'"{operation['column_name']}"'
                 new_value = operation['new_value']
 
                 if operation_type == "ADD":
@@ -235,7 +236,15 @@ class VersionManager():
                     self.db.execute(delete_query, {"row_hash": row_hash})
 
                
-
+            update_version_status_query = text("""
+                UPDATE table_versions
+                SET isapproved = :new_status
+                WHERE id = :version_id
+                """)
+            self.db.execute(update_version_status_query, {
+                "new_status": True,  
+                "version_id": version_id  
+            }) 
             # Commit the changes
             # self.db.commit()
 
@@ -293,8 +302,9 @@ class VersionManager():
 
         print(newData)
 
-        self.apply_table_operations(newData, tableName)
-                
+        self.apply_table_operations(newData, tableName, latest_unapproved_uuid)
+
+            
 
 
 

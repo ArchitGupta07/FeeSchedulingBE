@@ -80,3 +80,19 @@ def remove_null_values(df):
             df[column].fillna('-1', inplace=True)
     
     return df
+
+
+# import hashlib
+from datetime import datetime
+
+def generate_unique_constraint_name(table_name):
+    # Create a unique string based on the table name and current timestamp
+    unique_string = f"{table_name}_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    
+    # Hash the unique string to create a unique identifier
+    hash_object = hashlib.sha256(unique_string.encode())
+    unique_id = hash_object.hexdigest()[:8]  # Use first 8 characters for simplicity
+    
+    # Format the constraint name
+    constraint_name = f"unique_hash_{unique_id}"
+    return constraint_name

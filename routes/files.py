@@ -35,7 +35,7 @@ def download_file(table_name:str,db : Database = Depends(get_db),table_manager_o
     
 
 
-@file_router.get("/file-data/{table_name}",   summary="Fetch Data from a Specified Table",
+@file_router.get("/file-data/{table_name}/{id}",   summary="Fetch Data from a Specified Table",
     description="""
     This API endpoint retrieves data from a specified table in the database.
     It takes the table name as a path parameter and returns the data stored in that table.
@@ -49,9 +49,10 @@ def download_file(table_name:str,db : Database = Depends(get_db),table_manager_o
     Example:
     If the table name is `users`, the API will return the data stored in the `users` table.
     """)
-async def get_file_data(table_name : str,db : Database = Depends(get_db),cmp_obj : Comparision = Depends(Comparision)) :
-    table_data  = cmp_obj.get_table_data(table_name,db)
-    return {"data" : table_data}
+async def get_file_data(table_name : str,id:str,db : Database = Depends(get_db),cmp_obj : Comparision = Depends(Comparision)):
+    # print("id...............",id)
+    table_data, active_columns  = cmp_obj.get_table_data(table_name,id, db)
+    return {"data" : table_data,"active_columns":active_columns}
 
 
 @file_router.post("/upload",summary="Upload an XLSX File and Store Data in Database",
@@ -63,8 +64,8 @@ async def get_file_data(table_name : str,db : Database = Depends(get_db),cmp_obj
 async def upload_file(file: UploadFile = File(...), stateName: str = Form(...),category: str = Form(...),table_manager_obj: TableManager = Depends(TableManager),db : Database = Depends(get_db)):
 
     print("upload",stateName, category)
-    data,table_name,file_name = await table_manager_obj.insert_table(db,stateName, category,file)
-    return {"data" : data, "table_name" : table_name, "file_name" : file_name}
+    table_name,file_name, version_id = await table_manager_obj.insert_table(db,stateName, category,file)
+    return {"table_name" : table_name, "file_name" : file_name, "version_id":version_id}
 
 
 @file_router.post("/compare/{table_name}",  summary="Compare XLSX File with Existing Table Data",
@@ -82,8 +83,9 @@ async def calculate_dif(table_name: str ,cmp_file: UploadFile = File(...),cmp_ob
 
 @file_router.get("/get_cell_changes/{id}")
 async def get_file_data(id : str,db : Database = Depends(get_db),cmp_obj : Comparision = Depends(Comparision)) :
-    table_data  = cmp_obj.get_cell_changes(id,db)
-    return {"data" : table_data}
+    cell_changes  = cmp_obj.get_cell_changes(id,db)
+    table_changes = cmp_obj.get_table_changes(id,db)
+    return {"cell_changes" : cell_changes, "table_changes":table_changes}
 
 # @file_router.put("/update/{table_name}")
 # async def update_item(table_name:str, item: dict):

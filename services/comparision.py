@@ -242,7 +242,7 @@ class Comparision :
     
 
     def get_cell_changes(self, version_id: str, db: Database):
-    # Define the SQL query to retrieve data from the cell_changes table based on version_id
+    
         query = text("""
             SELECT * 
             FROM cell_changes 
@@ -252,26 +252,63 @@ class Comparision :
         try:
             # Execute the query with the provided version_id
             result = db.execute(query, {"version_id": version_id})
-        except SQLAlchemyError as e:
-            # Handle any database errors
+        except SQLAlchemyError as e:           
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
         
-        # Fetch all rows from the result
-        rows = result.fetchall()
-
-        # Retrieve column names from the result
+        rows = result.fetchall()      
         columns = result.keys()
 
-        # Convert the result to a DataFrame
-        df = pd.DataFrame(rows, columns=columns)
-
-        print(df.to_dict(orient="records"))
-        
+        df = pd.DataFrame(rows, columns=columns)           
         return df.to_dict(orient="records")
+    
+    def get_table_changes(self,version_id:str, db:Database):
+        query = text("""
+            SELECT * 
+            FROM table_changes 
+            WHERE version_id = :version_id
+        """)
+        
+        try:
+            # Execute the query with the provided version_id
+            result = db.execute(query, {"version_id": version_id})
+        except SQLAlchemyError as e:           
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        
+        rows = result.fetchall()      
+        columns = result.keys()
+
+        df = pd.DataFrame(rows, columns=columns)           
+        return df.to_dict(orient="records")
+    
+
+    def get_table_columns(self,table_name, version_id, db:Database):
+        query = text("""
+            SELECT * 
+            FROM table_versions 
+            WHERE id = :version_id
+        """)
+        
+        try:
+            # Execute the query with the provided version_id
+            result = db.execute(query, {"version_id": version_id})
+            row = result.fetchone()
+            # print("result................",row.active_columns)
+            return list(row.active_columns)
+        except SQLAlchemyError as e:           
+            raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+        pass
+
+
 
     
-    def get_table_data(self,table_name,db : Database) : 
+    def get_table_data(self,table_name,id,db : Database) : 
+
+
+        active_columns = self.get_table_columns(table_name, id, db)
         table_manager_obj = TableManager()
         df = table_manager_obj.fetch_table_from_db(table_name,db)
+        df = remove_null_values(df)
+
+        
         json_data=df.to_dict(orient='records')
-        return json_data
+        return json_data, active_columns

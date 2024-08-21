@@ -7,7 +7,7 @@ import pandas as pd
 from sqlalchemy.exc import SQLAlchemyError
 from db import Database, get_db, engine
 from sqlalchemy.sql import text
-from utils.helper import add_hash_col, convert_column_to_numeric, infer_type, remove_null_values
+from utils.helper import add_hash_col, convert_column_to_numeric, infer_type, remove_null_values, generate_unique_constraint_name
 import datetime
 
 class TableManager:
@@ -223,11 +223,14 @@ class TableManager:
 
 
                 
-                query2 = text("INSERT INTO table_versions (table_name, isapproved, active_columns) VALUES (:table_name,:approvedStatus,:active_cols)")
-                db.execute(query2, {"table_name": table_name,"approvedStatus":True, "active_cols":active_cols})
+                query2 = text("INSERT INTO table_versions (table_name, isapproved, active_columns) VALUES (:table_name,:approvedStatus,:active_cols) RETURNING id")
+                result = db.execute(query2, {"table_name": table_name,"approvedStatus":True, "active_cols":active_cols})
+
+                generated_id = result.fetchone()[0]
 
 
-                alter_query = text(f"""ALTER TABLE {table_name} ADD CONSTRAINT unique_hash UNIQUE (hash)""")
+                constraint_name = generate_unique_constraint_name(table_name)
+                alter_query = text(f"""ALTER TABLE {table_name} ADD CONSTRAINT {constraint_name} UNIQUE (hash)""")
                 db.execute(alter_query)
 
 
@@ -240,13 +243,15 @@ class TableManager:
                 # transaction.commit()
 
         except SQLAlchemyError as e:
+            import traceback
             # Rollback the transaction in case of an error
             # transaction.rollback()
+            traceback.print_exc()
             raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
         # send_df.set_index("hash", inplace=True)
 
         #print(send_df)
-        return send_df.to_dict(orient='records'),table_name,file.filename
+        return table_name,file.filename, generated_id
     
     
     
