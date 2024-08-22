@@ -205,6 +205,7 @@ class TableManager:
         # #print("cols.................................",df.columns)
         # #print("cols.................................",hashable_cols )
         df = add_hash_col(df, hashable_cols)
+        df['valid'] = True
         send_df = df
         try:
             # with db.begin() as transaction:
